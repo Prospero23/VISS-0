@@ -1,4 +1,6 @@
 # Video Improvisation Scoring System 0
+https://www.youtube.com/watch?v=ZwfgKpYsR80 (Don Paul's wonderful performance)
+
 This is a piece I wrote as part of Don-Paul Kahl's residency at New England Conservatory of Music. It uses various video processes to control three different methods of improvisation that are quickly switched between. The piece was originally written to be performed by a solo saxophonist but it can be adapted to be played by any instrument. 
 
 As a note: I was really trying to investigate degrees of imprecision with notation in this piece. Which is to say in short, much of the notation is designed to have parts that overwhelm or are unclear. I have found this leads to interesting and unpredictable decisions that must be made in the moment by a performer. 
