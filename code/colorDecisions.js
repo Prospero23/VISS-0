@@ -1,34 +1,23 @@
 autowatch = 1;
 
-inlets = 2;
-outlets = 3;
+inlets = 1;
+outlets = 2;
 var deviationAmount = 200;
+var PIECE_DURATION = 480000;
 
+// sequence of times
 var times = [];
+// sequence of colors
 var events = [];
 
-//non white events longer?
-
-//is white or none-white
+// weighted random
 function Bernoulli(weight) {
   var roll = Math.floor(Math.random() * 100);
   if (roll <= weight * 100) {
-    return 1;
+    return true;
   } else {
-    return 0;
+    return false;
   }
-}
-//at first, mostly white -> start adding in others
-//Gaussian timings? works for me
-
-function bang() {
-  //reset times array and values up to 360000 ms
-  times = [];
-  events = [];
-  timingsFunction();
-
-  outlet(0, events);
-  outlet(1, times);
 }
 
 // Standard Normal variate using Box-Muller transform.
@@ -40,82 +29,78 @@ function gaussianRandom(mean, stdev) {
   return z * stdev + mean;
 }
 
-//calculate time stuff
+function bang() {
+  times = [];
+  events = [];
+  timingsFunction();
+
+  outlet(0, events);
+  outlet(1, times);
+}
+
+// calculate time stuff
 function timingsFunction() {
   var previousColor;
+  var selectedColor;
   var currentTime = 0;
   var deviation = 0;
-  var centralTimeWhite = 2000;
-  var centralTimeNone = 6000;
+  var centralTimeWhite = 3500;
+  var centralTimeNonWhite = 6500;
   var eventTime;
 
-  var colors = ["red", "green", "blue"];
-  var noColor = [
+  const colors = ["red", "green", "blue"];
+  const excludingColor = [
     ["green", "blue"],
     ["red", "blue"],
     ["red", "green"],
   ];
-  var blahBlah = 50;
+  const standardDeviation = 50;
 
-  //See if events are interuptions
-  //start long increasingly get shorter
-  //create terminal condition
+  while (currentTime < PIECE_DURATION) {
+    // NOTE: after 50 events, there are no more white events.
+    var notWhiteWeight = 0.02 * events.length;
+    var isNotWhite = Bernoulli(notWhiteWeight);
 
-  while (currentTime < 480000) {
-    //odds event is not white
-    var weight = 0.02 * events.length;
-    //calculate event type
-    var isNotWhite = Bernoulli(weight);
-    if (isNotWhite == 1) {
-      var other = Math.floor(Math.random() * 3);
-      //check for duplicate random draw
-      if (colors[other] === events[events.length - 1]) {
-        events.push(noColor[other][Math.floor(Math.random() * 2)]);
+    if (isNotWhite === true) {
+      const index = Math.floor(Math.random() * 3);
+      selectedColor = colors[index];
+      // don't repeat same color
+      if (selectedColor === previousColor) {
+        events.push(excludingColor[index][Math.floor(Math.random() * 2)]);
       } else {
-        //if no duplicate, add to events
-        events.push(colors[other]);
+        events.push(selectedColor);
       }
-      //if central time larger than 500ms, calc thing
-      if (centralTimeNone > 500) {
-        //calculate CENTRAL VALUE CHANGE
-        centralTimeNone = 6500 - events.length * 50;
-        eventTime = Math.abs(gaussianRandom(centralTimeNone, blahBlah));
+
+      if (centralTimeNonWhite > 500) {
+        // lose 50ms each time until hits 500ms
+        centralTimeNonWhite -= 50;
+        eventTime = Math.abs(gaussianRandom(centralTimeNonWhite, standardDeviation));
       } else {
-        centralTimeNone = 500;
-        eventTime = Math.abs(gaussianRandom(500, blahBlah));
-        //post('WORKING?')
+        eventTime = Math.abs(gaussianRandom(centralTimeNonWhite, standardDeviation));
       }
     } else {
       events.push("white");
-      centralTimeWhite = 3500;
       eventTime = Math.abs(
-        gaussianRandom(centralTimeWhite + deviation, blahBlah)
+        gaussianRandom(centralTimeWhite + deviation, standardDeviation)
       );
     }
-    //post(centralTimeNone);
-
+  
     times.push(eventTime);
 
     //incr current Time
     currentTime += eventTime;
     var roll = Bernoulli(0.8);
     var direction = 1;
-    if (roll == 0) {
+    if (roll === false) {
       direction = -1;
     }
     deviation -= deviationAmount * direction;
-    outlet(2, centralTimeNone);
-
-    previousColor = colors[other];
+    previousColor = selectedColor;
   }
-  if (currentTime > 480000) {
-    var difference = currentTime - 480000;
+
+  // correct for slight inaccuracy
+  if (currentTime > PIECE_DURATION) {
+    var difference = currentTime - PIECE_DURATION;
     times[times.length - 1] -= difference;
-  }
-}
-
-function msg_int(a) {
-  if (inlet == 1) {
-    deviationAmount = a;
   }
 }

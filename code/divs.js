@@ -4,12 +4,13 @@ inlets = 3;
 outlets = 3;
 
 var times = [];
-var central = 2000;
-var blueDivisions = [2, 5, 6, 8, 9];
+var central = 2000; // ms
+var blueDivisions = [2, 5, 6, 8, 9]; //possible divs of blue
 
 //red, green, blue, white. by default: white
 var currentColor;
 
+// weighted probability
 function Bernoulli(weight) {
   var roll = Math.floor(Math.random() * 100);
   if (roll <= weight * 100) {
@@ -18,11 +19,18 @@ function Bernoulli(weight) {
     return 0;
   }
 }
-//at first, mostly white -> start adding in others
-//Gaussian timings? works for me
+
+// Standard Normal variate using Box-Muller transform.
+function gaussianRandom(mean, stdev) {
+  var u = 1 - Math.random(); // Converting [0,1) to (0,1]
+  var v = Math.random();
+  var z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+  // Transform to the desired mean and standard deviation:
+  return z * stdev + mean;
+}
+
 
 //random divisions of space up to 10 from 2 up.
-
 function bang() {
   //reset times array and values up to 360000 ms
   var timez = gaussianRandom(central, 150);
@@ -48,13 +56,4 @@ function msg_int(a) {
       currentColor = a;
       outlet(2, currentColor);
     }
-}
-
-// Standard Normal variate using Box-Muller transform.
-function gaussianRandom(mean, stdev) {
-  var u = 1 - Math.random(); // Converting [0,1) to (0,1]
-  var v = Math.random();
-  var z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
-  // Transform to the desired mean and standard deviation:
-  return z * stdev + mean;
 }
